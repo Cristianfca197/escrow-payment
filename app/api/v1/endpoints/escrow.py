@@ -29,3 +29,31 @@ def fund_escrow_endpoint(
         escrow_order_id=escrow_id,
         idempotency_key=idempotency_key
     )
+
+@router.post(
+    "/{escrow_id}/release",
+    response_model=EscrowOrderResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Liberar fondos de Escrow al vendedor",
+    description="Liquida la orden fondeada: acredita al vendedor descontando la comisión de la plataforma e impacta el libro mayor."
+)
+def release_escrow_endpoint(
+    escrow_id: uuid.UUID = Path(..., description="UUID de la orden de Escrow"),
+    fee_collector_account_id: uuid.UUID = Header(
+        ..., 
+        alias="X-Fee-Collector-ID",
+        description="ID de la cuenta recolectora de comisiones"
+    ),
+    idempotency_key: str = Header(
+        ..., 
+        alias="Idempotency-Key", 
+        description="Clave única para garantizar idempotencia"
+    ),
+    db: Session = Depends(get_db)
+):
+    return EscrowService.release_escrow(
+        db=db,
+        escrow_order_id=escrow_id,
+        idempotency_key=idempotency_key,
+        fee_collector_account_id=fee_collector_account_id
+    )
